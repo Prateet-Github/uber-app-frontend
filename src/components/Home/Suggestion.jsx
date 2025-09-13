@@ -1,10 +1,15 @@
+import { useNavigate } from "react-router-dom";
+
 const Suggestion = () => {
+  const navigate = useNavigate();
+
   const suggestionData = [
     {
       id: 1,
       title: "Ride",
       description: "Go anywhere with Uber. Request a ride, hop in and go.",
       icon: "./ride.png",
+      onClick: () => navigate("/getride"),
     },
     {
       id: 2,
@@ -12,6 +17,7 @@ const Suggestion = () => {
       description:
         "Reserve your ride in advance so you can relax on the day of your trip.",
       icon: "./reserve.png",
+      onClick: () => navigate("/reserve"),
     },
     {
       id: 3,
@@ -19,6 +25,7 @@ const Suggestion = () => {
       description:
         "Get convenient, affordable outstation cabs anytime at your door.",
       icon: "./intercity.png",
+      onClick: () => navigate("/intercity"),
     },
     {
       id: 4,
@@ -26,12 +33,14 @@ const Suggestion = () => {
       description:
         "Lower cost shared rides on professionally driven buses and vans.",
       icon: "./shuttle.png",
+      onClick: () => navigate("/shuttle"),
     },
     {
       id: 5,
       title: "Courier",
       description: "Uber makes same day item delivery easier than ever.",
       icon: "./courier.png",
+      onClick: () => navigate("/courier"),
     },
     {
       id: 6,
@@ -39,6 +48,7 @@ const Suggestion = () => {
       description:
         "Request a trip for a block of time and make multiple stops.",
       icon: "./rentals.png",
+      onClick: () => navigate("/rentals"),
     },
   ];
 
@@ -60,7 +70,12 @@ const Suggestion = () => {
                 className="size-22 object-contain"
               />
             </div>
-            <button className="p-2 bg-white rounded-2xl">Details</button>
+            <button
+              onClick={item.onClick}
+              className="p-2 bg-white rounded-2xl hover:bg-gray-200 transition"
+            >
+              Details
+            </button>
           </div>
         ))}
       </div>
