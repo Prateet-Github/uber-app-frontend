@@ -40,7 +40,9 @@ const Navbar = () => {
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Left Menu (hidden on mobile) */}
         <div className="hidden md:flex items-center gap-8">
-          <div className="text-3xl font-bold">Uber</div>
+          <div className="text-3xl font-bold">
+            <Link to="/">Uber</Link>
+          </div>
           <div className="flex gap-6">
             <Link to="/getride" className="hover:underline">
               Ride
