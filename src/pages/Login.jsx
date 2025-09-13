@@ -17,7 +17,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       if (currentState === "Sign Up") {
         console.log("Attempting sign up...");
@@ -65,8 +65,8 @@ const Login = () => {
 
       <div className="flex flex-col items-center justify-center gap-5 flex-1 px-4">
         <h1 className="text-2xl max-w-xs font-medium text-center">
-          {!showEmailForm 
-            ? "What's your phone number or email?" 
+          {!showEmailForm
+            ? "What's your phone number or email?"
             : `${currentState} to continue`}
         </h1>
 
@@ -91,7 +91,10 @@ const Login = () => {
           </>
         ) : (
           // Email/Password form
-          <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full max-w-xs flex flex-col gap-4"
+          >
             {currentState === "Sign Up" && (
               <input
                 type="text"
@@ -102,7 +105,7 @@ const Login = () => {
                 className="bg-gray-200 p-3 rounded-lg border border-gray-300 focus:border-black focus:outline-none"
               />
             )}
-            
+
             <input
               type="email"
               placeholder="Email"
@@ -111,7 +114,7 @@ const Login = () => {
               required
               className="bg-gray-200 p-3 rounded-lg border border-gray-300 focus:border-black focus:outline-none"
             />
-            
+
             <input
               type="password"
               placeholder="Password"
@@ -120,7 +123,7 @@ const Login = () => {
               required
               className="bg-gray-200 p-3 rounded-lg border border-gray-300 focus:border-black focus:outline-none"
             />
-            
+
             <button
               type="submit"
               disabled={loading}
@@ -137,13 +140,15 @@ const Login = () => {
               >
                 ← Back
               </button>
-              
+
               <button
                 type="button"
                 onClick={toggleAuthMode}
                 className="text-blue-600 text-sm hover:underline"
               >
-                {currentState === "Sign Up" ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+                {currentState === "Sign Up"
+                  ? "Already have an account? Sign In"
+                  : "Need an account? Sign Up"}
               </button>
             </div>
           </form>
@@ -169,15 +174,26 @@ const Login = () => {
               onClick={() => setShowEmailForm(true)}
               className="bg-white border border-gray-300 text-black w-full max-w-xs p-3 rounded-lg cursor-pointer flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.333a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 4.333a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
               <span>Continue with Email</span>
             </button>
 
             <p className="w-full max-w-xs font-light text-xs text-center text-gray-600 mt-4">
               By continuing, you agree to calls, including by autodialer,
-              WhatsApp, or texts from Uber and its affiliates to the number provided.
+              WhatsApp, or texts from Uber and its affiliates to the number
+              provided.
             </p>
           </>
         )}

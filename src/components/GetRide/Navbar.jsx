@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
-    <nav className="p-4 sticky top-0 z-50">
+    <nav className="p-4 sticky top-0 z-50 border-b">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Left Menu (hidden on mobile) */}
         <div className="hidden md:flex items-center gap-8">
