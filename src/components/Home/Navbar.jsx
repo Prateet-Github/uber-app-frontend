@@ -82,9 +82,12 @@ const Navbar = () => {
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setIsDown(!isDown)}
-                className="bg-white text-black px-4 py-2 rounded-3xl font-medium"
+                className="bg-black text-white px-4 py-2 rounded-3xl font-medium"
               >
-                {user.username} ⬇
+                <div className="flex items-center gap-4 text-black bg-white px-4 py-2 rounded-3xl">
+                  <span>{user.username}</span>
+                  <span>⬇</span>
+                </div>
               </button>
               {isDown && (
                 <div className="absolute right-0 mt-2  bg-white text-black rounded-lg shadow-lg  z-10 flex flex-col shadow-gray-600">
