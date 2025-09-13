@@ -1,4 +1,9 @@
 const Login = () => {
+
+  const googleLogin = () => {
+    window.location.href = "http://localhost:5001/api/users/google";
+  }
+
   return (
     <div className="w-screen h-screen flex flex-col">
       <div className="bg-black text-white py-4 text-3xl pl-8">Uber</div>
@@ -24,7 +29,7 @@ const Login = () => {
           <div className="flex-grow border-t border-gray-400"></div>
         </div>
 
-        <button className="bg-gray-300 text-black w-xs p-3 rounded-xl cursor-pointer flex items-center justify-center gap-3">
+        <button onClick={googleLogin} className="bg-gray-300 text-black w-xs p-3 rounded-xl cursor-pointer flex items-center justify-center gap-3">
           <img src="./google.svg" alt="google" className="h-6 w-6" />
           <span>Continue with Google</span>
         </button>

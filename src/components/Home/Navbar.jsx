@@ -11,7 +11,7 @@ const Navbar = () => {
         <div className="flex items-center gap-8">
           <div className="text-3xl font-bold">Uber</div>
           <div className="hidden md:flex gap-6">
-            <Link to="/ride" className="hover:underline">
+            <Link to="/getride" className="hover:underline">
               Ride
             </Link>
             <Link to="/earn" className="hover:underline">
