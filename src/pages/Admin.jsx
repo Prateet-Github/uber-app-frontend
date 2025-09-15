@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Car, CheckCircle, XCircle, AlertCircle, Menu, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/authContext';
 
 // Update this to your backend URL
 const API_BASE_URL = 'http://localhost:5001/api'; // Change port if different
 
 const AdminDashboard = () => {
+
+  const { signOut } = useAuth();
+
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -142,7 +146,7 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="absolute bottom-6 left-6">
-          <button className="flex items-center gap-3 text-gray-400 hover:text-white">
+          <button onClick={signOut} className="flex items-center gap-3 text-gray-400 hover:text-white">
             <LogOut className="w-5 h-5" />
             {sidebarOpen && <span>Logout</span>}
           </button>
