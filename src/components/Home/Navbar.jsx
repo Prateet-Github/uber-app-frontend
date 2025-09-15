@@ -10,6 +10,9 @@ import {
   Bike,
   HelpCircle,
   Activity,
+  ChevronDown,
+  ChevronUp
+
 } from "lucide-react";
 
 import { useAuth } from "../../../context/authContext";
@@ -49,7 +52,7 @@ const Navbar = () => {
             <Link to="/getride" className="hover:underline">
               Ride
             </Link>
-            <Link to="/earn" className="hover:underline">
+            <Link to="/driver" className="hover:underline">
               Earn
             </Link>
             <Link to="/business" className="hover:underline">
@@ -86,10 +89,11 @@ const Navbar = () => {
                 onClick={() => setIsDown(!isDown)}
                 className="bg-black text-white px-4 py-2 rounded-3xl font-medium"
               >
-                <div className="flex items-center gap-4 text-black bg-white px-4 py-2 rounded-3xl">
-                  <span>{user.username}</span>
-                  <span>⬇</span>
-                </div>
+                 <div className="flex items-center space-x-2 bg-white text-black px-3 py-2 rounded-full cursor-pointer hover:bg-gray-100 transition-colors">
+            <User className="w-4 h-4" />
+            <span className="text-sm font-medium">{user.username}</span>
+            {isDown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
               </button>
               {isDown && (
                 <div className="absolute right-0 mt-2  bg-white text-black rounded-lg shadow-lg  z-10 flex flex-col shadow-gray-600">

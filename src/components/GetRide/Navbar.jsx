@@ -10,6 +10,8 @@ import {
   Activity,
   GraduationCap,
   IndianRupee,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 const Navbar = () => {
@@ -75,9 +77,10 @@ const Navbar = () => {
                 onClick={() => setIsDown(!isDown)}
                 className="bg-white text-black px-4 py-2 rounded-3xl font-medium"
               >
-                <div className="flex items-center gap-4 text-white bg-black px-4 py-2 rounded-3xl">
-                  <span>{user.username}</span>
-                  <span>⬇</span>
+                <div className="flex items-center space-x-2 bg-black text-white px-3 py-2 rounded-full cursor-pointer transition-colors">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm font-medium">{user.username}</span>
+                  {isDown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
               </button>
               {isDown && (
@@ -99,10 +102,12 @@ const Navbar = () => {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-between">
-                      <div className="bg-gray-100 p-8 rounded-2xl cursor-pointer flex flex-col items-center">
-                        <HelpCircle size={20} />
-                        <span>Help</span>
-                      </div>
+                      <Link to="/help">
+                        <div className="bg-gray-100 p-8 rounded-2xl cursor-pointer flex flex-col items-center">
+                          <HelpCircle size={20} />
+                          <span>Help</span>
+                        </div>
+                      </Link>
                       <div className="bg-gray-100 p-8 rounded-2xl cursor-pointer flex flex-col items-center">
                         <Wallet size={20} />
                         <span>Wallet</span>

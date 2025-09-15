@@ -5,6 +5,11 @@ import GetRide from "./pages/GetRide";
 import AuthSuccess from "./authSuccess";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
+import Driver from "./pages/Driver";
+import Tab1 from "./components/DriverTabs/Tab1";
+import Tab2 from "./components/DriverTabs/Tab2";
+import Tab3 from "./components/DriverTabs/Tab3";
+import Pending from "./components/DriverTabs/Pending";
 
 const App = () => {
   return (
@@ -16,6 +21,11 @@ const App = () => {
         <Route path="/auth/success" element={<AuthSuccess />} />
         <Route path="/help" element={<Help />}></Route>
         <Route path="*" element={<NotFound />} />
+        <Route path="/driver" element={<Driver></Driver>}></Route>
+        <Route path="/tab1" element={<Tab1></Tab1>}></Route>
+        <Route path="/tab2" element={<Tab2></Tab2>}></Route>
+        <Route path="/tab3" element={<Tab3></Tab3>}></Route>
+        <Route path="/pending" element={<Pending></Pending>}></Route>
       </Routes>
     </div>
   );
