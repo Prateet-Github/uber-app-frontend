@@ -20,10 +20,48 @@ import {
 } from "lucide-react";
 
 const Tab3 = () => {
+  const handleDriverRequest = async () => {
+    try {
+      setLoading(true); // Add loading state
+
+      const token = localStorage.getItem("token"); // Get user token
+      const response = await fetch(
+        "http://localhost:5001/api/driver/request-driver",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Driver request submitted successfully!");
+        // Update UI to show pending status
+        setDriverRequestStatus("pending");
+      } else {
+        alert(data.message || "Failed to submit request");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error submitting request");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const { user, signOut } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDown, setIsDown] = useState(false);
+
+  // New state for loading and driver request status
+
+  const [loading, setLoading] = useState(false);
+  const [driverRequestStatus, setDriverRequestStatus] = useState("none"); // none, pending, approved, rejected
 
   const dropdownRef = useRef(null);
 
@@ -166,6 +204,7 @@ const Tab3 = () => {
           ))}
 
           <button
+            onClick={handleDriverRequest}
             type="submit"
             className="w-full bg-black text-white py-3 rounded-3xl font-medium hover:bg-gray-800 transition-colors"
           >

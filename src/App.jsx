@@ -10,6 +10,8 @@ import Tab1 from "./components/DriverTabs/Tab1";
 import Tab2 from "./components/DriverTabs/Tab2";
 import Tab3 from "./components/DriverTabs/Tab3";
 import Pending from "./components/DriverTabs/Pending";
+import Admin from "./pages/Admin";
+import DriverDashboard from "./pages/DriverDashboard";
 
 const App = () => {
   return (
@@ -26,6 +28,8 @@ const App = () => {
         <Route path="/tab2" element={<Tab2></Tab2>}></Route>
         <Route path="/tab3" element={<Tab3></Tab3>}></Route>
         <Route path="/pending" element={<Pending></Pending>}></Route>
+        <Route path="/admin" element={<Admin></Admin>}></Route>
+        <Route path="/driverdashboard" element={<DriverDashboard></DriverDashboard>}></Route>
       </Routes>
     </div>
   );
