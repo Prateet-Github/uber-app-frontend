@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Car, CheckCircle, XCircle, AlertCircle, Menu, LogOut } from 'lucide-react';
-import { useAuth } from '../../context/authContext';
+import { useState, useEffect } from "react";
+import {
+  Users,
+  Car,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Menu,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "../../context/authContext";
 
-// Update this to your backend URL
-const API_BASE_URL = 'http://localhost:5001/api'; // Change port if different
+const API_BASE_URL = "http://localhost:5001/api";
 
 const AdminDashboard = () => {
-
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeDrivers: 0,
-    pendingRequests: 0
+    pendingRequests: 0,
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fetch pending requests from your backend
   useEffect(() => {
     fetchPendingRequests();
   }, []);
@@ -26,29 +31,29 @@ const AdminDashboard = () => {
   const fetchPendingRequests = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token'); // Make sure this matches your token storage key
+      const token = localStorage.getItem("token"); // Make sure this matches your token storage key
       const response = await fetch(`${API_BASE_URL}/driver/pending-requests`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setPendingRequests(data.requests || []);
-        setStats(prev => ({
+        setStats((prev) => ({
           ...prev,
-          pendingRequests: data.requests?.length || 0
+          pendingRequests: data.requests?.length || 0,
         }));
       } else if (response.status === 403) {
-        alert('Access denied. Admin privileges required.');
+        alert("Access denied. Admin privileges required.");
         // Redirect to login
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     } catch (error) {
-      console.error('Error fetching requests:', error);
-      alert('Error connecting to server');
+      console.error("Error fetching requests:", error);
+      alert("Error connecting to server");
     }
     setLoading(false);
   };
@@ -56,31 +61,34 @@ const AdminDashboard = () => {
   const handleApprove = async (userId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/driver/approve-driver/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/driver/approve-driver/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
-      
+      );
+
       if (response.ok) {
         const data = await response.json();
-        setPendingRequests(prev => prev.filter(req => req._id !== userId));
-        setStats(prev => ({
+        setPendingRequests((prev) => prev.filter((req) => req._id !== userId));
+        setStats((prev) => ({
           ...prev,
           pendingRequests: prev.pendingRequests - 1,
-          activeDrivers: prev.activeDrivers + 1
+          activeDrivers: prev.activeDrivers + 1,
         }));
-        alert('Driver approved successfully!');
+        alert("Driver approved successfully!");
       } else {
         const error = await response.json();
         alert(`Error: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error approving driver:', error);
-      alert('Error connecting to server');
+      console.error("Error approving driver:", error);
+      alert("Error connecting to server");
     }
     setLoading(false);
   };
@@ -88,30 +96,33 @@ const AdminDashboard = () => {
   const handleReject = async (userId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/driver/reject-driver/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/driver/reject-driver/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
-      
+      );
+
       if (response.ok) {
         const data = await response.json();
-        setPendingRequests(prev => prev.filter(req => req._id !== userId));
-        setStats(prev => ({
+        setPendingRequests((prev) => prev.filter((req) => req._id !== userId));
+        setStats((prev) => ({
           ...prev,
-          pendingRequests: prev.pendingRequests - 1
+          pendingRequests: prev.pendingRequests - 1,
         }));
-        alert('Driver request rejected');
+        alert("Driver request rejected");
       } else {
         const error = await response.json();
         alert(`Error: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error rejecting driver:', error);
-      alert('Error connecting to server');
+      console.error("Error rejecting driver:", error);
+      alert("Error connecting to server");
     }
     setLoading(false);
   };
@@ -121,7 +132,11 @@ const AdminDashboard = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 ease-in-out`}>
+      <div
+        className={`${
+          sidebarOpen ? "w-64" : "w-20"
+        } bg-slate-900 text-white transition-all duration-300 ease-in-out`}
+      >
         <div className="p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
@@ -135,9 +150,13 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
-        
+
         <nav className="mt-8">
-          <div className={`px-6 py-3 bg-slate-800 border-r-4 border-green-500 ${!sidebarOpen && 'px-4'}`}>
+          <div
+            className={`px-6 py-3 bg-slate-800 border-r-4 border-green-500 ${
+              !sidebarOpen && "px-4"
+            }`}
+          >
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5" />
               {sidebarOpen && <span>Driver Requests</span>}
@@ -146,7 +165,10 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="absolute bottom-6 left-6">
-          <button onClick={signOut} className="flex items-center gap-3 text-gray-400 hover:text-white">
+          <button
+            onClick={signOut}
+            className="flex items-center gap-3 text-gray-400 hover:text-white"
+          >
             <LogOut className="w-5 h-5" />
             {sidebarOpen && <span>Logout</span>}
           </button>
@@ -159,19 +181,23 @@ const AdminDashboard = () => {
         <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h2 className="text-2xl font-semibold text-gray-900">Admin Dashboard</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Admin Dashboard
+              </h2>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Admin User</p>
-                <p className="text-sm text-gray-500">admin@mail.com</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.username}
+                </p>
+                <p className="text-sm text-gray-500">{user?.email}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"></div>
             </div>
@@ -187,7 +213,9 @@ const AdminDashboard = () => {
                   <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.totalUsers}
+                  </p>
                   <p className="text-sm text-gray-600">Total Users</p>
                 </div>
               </div>
@@ -199,7 +227,9 @@ const AdminDashboard = () => {
                   <Car className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeDrivers}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.activeDrivers}
+                  </p>
                   <p className="text-sm text-gray-600">Active Drivers</p>
                 </div>
               </div>
@@ -211,7 +241,9 @@ const AdminDashboard = () => {
                   <AlertCircle className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.pendingRequests}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.pendingRequests}
+                  </p>
                   <p className="text-sm text-gray-600">Pending Requests</p>
                 </div>
               </div>
@@ -222,13 +254,15 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Driver Requests</h3>
-                <button 
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Driver Requests
+                </h3>
+                <button
                   onClick={fetchPendingRequests}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   disabled={loading}
                 >
-                  {loading ? 'Loading...' : 'Refresh'}
+                  {loading ? "Loading..." : "Refresh"}
                 </button>
               </div>
             </div>
@@ -236,8 +270,12 @@ const AdminDashboard = () => {
             {pendingRequests.length === 0 ? (
               <div className="p-12 text-center">
                 <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Requests</h3>
-                <p className="text-gray-600">All driver requests have been processed.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Pending Requests
+                </h3>
+                <p className="text-gray-600">
+                  All driver requests have been processed.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -270,7 +308,9 @@ const AdminDashboard = () => {
                               {request.username.charAt(0).toUpperCase()}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{request.username}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {request.username}
+                              </div>
                             </div>
                           </div>
                         </td>

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const DriverDashboard = () => {
   const [driver, setDriver] = useState({});
   const [rides, setRides] = useState([]);
   const [earnings, setEarnings] = useState(0);
 
-  const token = localStorage.getItem('token'); // JWT token for auth
+  const token = localStorage.getItem("token");
 
   // Fetch driver info
   const fetchDriverData = async () => {
     try {
-      const res = await axios.get('/api/driver/profile', {
+      const res = await axios.get("/api/driver/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDriver(res.data);
@@ -24,7 +24,7 @@ const DriverDashboard = () => {
   // Fetch ride requests
   const fetchRides = async () => {
     try {
-      const res = await axios.get('/api/driver/rides', {
+      const res = await axios.get("/api/driver/rides", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRides(res.data);
@@ -73,10 +73,18 @@ const DriverDashboard = () => {
       {/* Driver Info */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <h2 className="text-xl font-semibold">Profile</h2>
-        <p><strong>Name:</strong> {driver.username}</p>
-        <p><strong>Email:</strong> {driver.email}</p>
-        <p><strong>Role:</strong> {driver.role}</p>
-        <p><strong>Earnings:</strong> ${earnings}</p>
+        <p>
+          <strong>Name:</strong> {driver.username}
+        </p>
+        <p>
+          <strong>Email:</strong> {driver.email}
+        </p>
+        <p>
+          <strong>Role:</strong> {driver.role}
+        </p>
+        <p>
+          <strong>Earnings:</strong> ${earnings}
+        </p>
       </div>
 
       {/* Ride Requests */}
@@ -92,10 +100,18 @@ const DriverDashboard = () => {
                 className="flex justify-between items-center p-2 border-b"
               >
                 <div>
-                  <p><strong>Passenger:</strong> {ride.passengerName}</p>
-                  <p><strong>Pickup:</strong> {ride.pickup}</p>
-                  <p><strong>Dropoff:</strong> {ride.dropoff}</p>
-                  <p><strong>Fare:</strong> ${ride.fare}</p>
+                  <p>
+                    <strong>Passenger:</strong> {ride.passengerName}
+                  </p>
+                  <p>
+                    <strong>Pickup:</strong> {ride.pickup}
+                  </p>
+                  <p>
+                    <strong>Dropoff:</strong> {ride.dropoff}
+                  </p>
+                  <p>
+                    <strong>Fare:</strong> ${ride.fare}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -120,21 +136,26 @@ const DriverDashboard = () => {
       {/* Ride History */}
       <div className="bg-white p-4 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-2">Ride History</h2>
-        {rides.filter((r) => r.status === 'completed').length === 0 ? (
+        {rides.filter((r) => r.status === "completed").length === 0 ? (
           <p>No completed rides yet</p>
         ) : (
           <ul>
             {rides
-              .filter((r) => r.status === 'completed')
+              .filter((r) => r.status === "completed")
               .map((ride) => (
-                <li
-                  key={ride._id}
-                  className="p-2 border-b"
-                >
-                  <p><strong>Passenger:</strong> {ride.passengerName}</p>
-                  <p><strong>Pickup:</strong> {ride.pickup}</p>
-                  <p><strong>Dropoff:</strong> {ride.dropoff}</p>
-                  <p><strong>Fare:</strong> ${ride.fare}</p>
+                <li key={ride._id} className="p-2 border-b">
+                  <p>
+                    <strong>Passenger:</strong> {ride.passengerName}
+                  </p>
+                  <p>
+                    <strong>Pickup:</strong> {ride.pickup}
+                  </p>
+                  <p>
+                    <strong>Dropoff:</strong> {ride.dropoff}
+                  </p>
+                  <p>
+                    <strong>Fare:</strong> ${ride.fare}
+                  </p>
                 </li>
               ))}
           </ul>

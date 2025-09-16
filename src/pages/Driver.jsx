@@ -4,9 +4,6 @@ import {
   Globe,
   HelpCircle,
   User,
-  Wallet,
-  Activity,
-  IndianRupee,
   GraduationCap,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -17,12 +14,9 @@ export default function UberLandingPage() {
   const { user, signOut } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
-
   const [isDown, setIsDown] = useState(false);
 
   const dropdownRef = useRef(null);
-
-  // Close dropdown if click happens outside
 
   useEffect(() => {
     function handleClickOutside(event) {

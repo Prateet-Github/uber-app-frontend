@@ -90,7 +90,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-    window.location.href = "/"; // Redirect to login page
+    if (user?.role === "admin") {
+      window.location.href = "/adminlogin";
+    } else if (user?.role === "driver") {
+      window.location.href = "/login";
+    } else {
+      window.location.href = "/";
+    }
   };
 
   return (
