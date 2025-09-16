@@ -12,6 +12,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const { signIn, signUp } = useAuth();
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

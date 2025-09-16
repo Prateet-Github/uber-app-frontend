@@ -1,4 +1,4 @@
-import { MapPin, Clock, User } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 
 const RideMap = () => {
   return (

@@ -3,14 +3,6 @@ import { useAuth } from "../../../context/authContext";
 import { useRef, useState, useEffect } from "react";
 
 import {
-  Menu,
-  X,
-  User,
-  Wallet,
-  HelpCircle,
-  Activity,
-  GraduationCap,
-  IndianRupee,
   ChevronDown,
   ChevronUp,
   ChevronRight,
@@ -20,6 +12,7 @@ import {
 } from "lucide-react";
 
 const Tab3 = () => {
+  // Handle driver request submission
   const handleDriverRequest = async () => {
     try {
       setLoading(true); // Add loading state
@@ -58,8 +51,6 @@ const Tab3 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDown, setIsDown] = useState(false);
 
-  // New state for loading and driver request status
-
   const [loading, setLoading] = useState(false);
   const [driverRequestStatus, setDriverRequestStatus] = useState("none"); // none, pending, approved, rejected
 
@@ -96,12 +87,7 @@ const Tab3 = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    // For example, you can get the selected location and proceed
-    // const selectedLocation = e.target.location.value;
-    // console.log("Selected Location:", selectedLocation);
-    // Redirect or perform other actions as needed
-    window.location.href = "/pending"; // Example redirection
+    window.location.href = "/pending";
   };
 
   return (

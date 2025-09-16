@@ -33,6 +33,7 @@ const DriverDashboard = () => {
     }
   };
 
+  // Initial data fetch
   useEffect(() => {
     fetchDriverData();
     fetchRides();

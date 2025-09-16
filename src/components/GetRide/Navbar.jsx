@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../../../context/authContext";
 import {
-  Menu,
-  X,
   User,
   Wallet,
   HelpCircle,
@@ -11,7 +9,7 @@ import {
   GraduationCap,
   IndianRupee,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from "lucide-react";
 
 const Navbar = () => {
@@ -80,7 +78,11 @@ const Navbar = () => {
                 <div className="flex items-center space-x-2 bg-black text-white px-3 py-2 rounded-full cursor-pointer transition-colors">
                   <User className="w-4 h-4" />
                   <span className="text-sm font-medium">{user.username}</span>
-                  {isDown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {isDown ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
                 </div>
               </button>
               {isDown && (

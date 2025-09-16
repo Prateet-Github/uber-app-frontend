@@ -1,13 +1,7 @@
 const Tab1 = () => {
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    // For example, you can get the selected location and proceed
-    // const selectedLocation = e.target.location.value;
-    // console.log("Selected Location:", selectedLocation);
-    // Redirect or perform other actions as needed
-    window.location.href = "/tab2"; // Example redirection
+    window.location.href = "/tab2";
   };
 
   return (
@@ -17,7 +11,10 @@ const Tab1 = () => {
           First, confirm the location you want to earn in
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-3 flex flex-col gap-10">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 flex flex-col gap-10"
+        >
           {/* Option 1 */}
           <div>
             <input

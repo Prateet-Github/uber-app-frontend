@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 
 export default function UberHelpPage() {
+  
   const supportCategories = [
     {
       icon: <Car className="w-8 h-8" />,
