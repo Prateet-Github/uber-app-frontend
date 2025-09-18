@@ -36,7 +36,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className="p-4 sticky top-0 z-50 border-b">
+    <nav className="p-4 sticky top-0 z-20 bg-black text-white shadow-md">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Left Menu (hidden on mobile) */}
         <div className="hidden md:flex items-center gap-8">
@@ -75,7 +75,7 @@ const Navbar = () => {
                 onClick={() => setIsDown(!isDown)}
                 className="bg-white text-black px-4 py-2 rounded-3xl font-medium"
               >
-                <div className="flex items-center space-x-2 bg-black text-white px-3 py-2 rounded-full cursor-pointer transition-colors">
+                <div className="flex items-center space-x-2  px-3 py-2 rounded-full cursor-pointer transition-colors">
                   <User className="w-4 h-4" />
                   <span className="text-sm font-medium">{user.username}</span>
                   {isDown ? (

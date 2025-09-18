@@ -21,17 +21,20 @@ const DriverDashboard = () => {
     }
   };
 
-  // Fetch ride requests
-  const fetchRides = async () => {
-    try {
-      const res = await axios.get("/api/driver/rides", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRides(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+// Fetch ride requests
+const fetchRides = async () => {
+  try {
+    const res = await axios.get("/api/driver/rides", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Ensure rides is always an array
+    setRides(Array.isArray(res.data) ? res.data : res.data.rides || []);
+  } catch (err) {
+    console.error(err);
+    setRides([]); // fallback to empty array to avoid crashes
+  }
+};
 
   // Initial data fetch
   useEffect(() => {
