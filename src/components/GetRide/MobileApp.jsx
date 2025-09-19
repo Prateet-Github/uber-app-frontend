@@ -132,8 +132,6 @@ function MobileApp() {
               </>
             )}
           </MapContainer>
-
-          {/* Mobile Instructions Overlay */}
         </div>
 
         {/* Mobile Bottom Route Info */}

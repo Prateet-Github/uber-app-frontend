@@ -13,10 +13,14 @@ import Pending from "./components/DriverTabs/Pending";
 import Admin from "./pages/Admin";
 import DriverDashboard from "./pages/DriverDashboard";
 import AdminLogin from "./pages/AdminLogin";
+import PaymentPage from "./pages/PaymentPage";
+import Loading from "./pages/Loading";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   return (
     <div>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/" element={<Home />}></Route>
         <Route path="/login" element={<Login />} />
@@ -35,6 +39,8 @@ const App = () => {
           element={<DriverDashboard></DriverDashboard>}
         ></Route>
         <Route path="/adminlogin" element={<AdminLogin></AdminLogin>}></Route>
+        <Route path="/payment" element={<PaymentPage></PaymentPage>}></Route>
+        <Route path="/loading" element={<Loading></Loading>}></Route>
       </Routes>
     </div>
   );

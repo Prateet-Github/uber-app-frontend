@@ -10,6 +10,7 @@ import {
 } from "./LocationSearch";
 
 import Navbar from "./Navbar";
+import axios from "axios";
 
 function DesktopApp() {
   const [pickup, setPickup] = useState(null);
@@ -17,6 +18,49 @@ function DesktopApp() {
   const [route, setRoute] = useState([]);
   const [info, setInfo] = useState(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [ride, setRide] = useState(null);
+
+  const handleRequestRide = async () => {
+    if (!pickup || !drop || !info) {
+      alert("Please fill in all required ride details.");
+      return;
+    }
+
+    setLoading(true);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to request a ride.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(
+        "http://localhost:5001/api/rides/request",
+        {
+          pickup: { ...pickup, display: pickup.display || "Current Location" },
+          drop: { ...drop, display: drop.display || "Destination" },
+          distance: info.distance,
+          duration: info.duration,
+          fare: FareAlgo(info.distance, info.duration),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Ride requested successfully:", data.ride);
+      setRide(data.ride);
+    } catch (error) {
+      console.error("Error requesting ride:", error);
+      alert("Failed to request ride. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (pickup && drop) {
@@ -155,12 +199,34 @@ function DesktopApp() {
                             <div className="text-sm text-gray-600 mb-4">
                               Fastest route • Light traffic
                             </div>
-                            <button className="w-full bg-black text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors">
+                            <button
+                              onClick={handleRequestRide}
+                              className="w-full bg-black text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors"
+                            >
                               Request Ride
                             </button>
                           </div>
                         </div>
-
+                        <div>
+                          {" "}
+                          {ride && (
+                            <div className="p-4 bg-green-50 rounded-xl mt-4">
+                              <h3 className="font-semibold text-gray-900">
+                                Ride Confirmed!
+                              </h3>
+                              <p>{ride.passengeId}</p>
+                              <p>
+                                Pickup:{" "}
+                                {ride.pickup?.display || "Custom location"}
+                              </p>
+                              <p>
+                                Drop: {ride.drop?.display || "Custom location"}
+                              </p>
+                              <p>Fare: ₹ {ride?.fare}</p>
+                              <p>Status: {ride?.status}</p>
+                            </div>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-500">
                           * Prices and times are estimates and may vary based on
                           traffic and demand
