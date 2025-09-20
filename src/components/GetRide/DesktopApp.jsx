@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  Marker,
+  Popup,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import io from "socket.io-client";
+import L from "leaflet";
 
 import {
   LocationMarkers,
@@ -12,6 +20,14 @@ import {
 import Navbar from "./Navbar";
 import axios from "axios";
 
+// Custom driver icon
+const driverIcon = L.divIcon({
+  className: "custom-driver-icon",
+  html: '<div style="background-color: #3B82F6; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold;">🚗</div>',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+});
+
 function DesktopApp() {
   const [pickup, setPickup] = useState(null);
   const [drop, setDrop] = useState(null);
@@ -19,7 +35,149 @@ function DesktopApp() {
   const [info, setInfo] = useState(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [ride, setRide] = useState(null);
+  const [ride, setRide] = useState(() => {
+    // Initialize ride state from localStorage
+    const savedRide = localStorage.getItem("currentRide");
+    return savedRide ? JSON.parse(savedRide) : null;
+  });
+  const [notification, setNotification] = useState(null);
+  const [activeDrivers, setActiveDrivers] = useState([]);
+
+  // Get user info for socket connection
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Fetch active drivers
+  const fetchActiveDrivers = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const { data } = await axios.get(
+        "http://localhost:5001/api/driver-decision/active-drivers",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setActiveDrivers(data.drivers || []);
+    } catch (error) {
+      console.error("Error fetching active drivers:", error);
+    }
+  };
+
+  // Helper function to update ride state and localStorage
+  const updateRideState = (newRide) => {
+    setRide(newRide);
+    if (newRide) {
+      localStorage.setItem("currentRide", JSON.stringify(newRide));
+    } else {
+      localStorage.removeItem("currentRide");
+    }
+  };
+
+  // Socket connection for real-time updates
+  // Check for existing ride on component mount
+  useEffect(() => {
+    const checkExistingRide = async () => {
+      const token = localStorage.getItem("token");
+      const savedRide = localStorage.getItem("currentRide");
+
+      if (!token || !savedRide) return;
+
+      try {
+        const rideData = JSON.parse(savedRide);
+
+        // Verify the ride still exists and is active using your existing endpoint
+        const { data } = await axios.get(
+          `http://localhost:5001/api/rides/${rideData._id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // Check if ride is still active
+        if (
+          data.ride &&
+          (data.ride.status === "pending" ||
+            data.ride.status === "accepted" ||
+            data.ride.status === "in-progress")
+        ) {
+          updateRideState(data.ride);
+
+          // If there's a ride, also set the pickup/drop locations
+          if (data.ride.pickup && data.ride.drop) {
+            setPickup(data.ride.pickup);
+            setDrop(data.ride.drop);
+          }
+        } else {
+          // Ride is completed/cancelled, clear it
+          updateRideState(null);
+        }
+      } catch (error) {
+        console.error("Error checking existing ride:", error);
+        // Clear invalid ride data (ride doesn't exist or user doesn't have access)
+        updateRideState(null);
+      }
+    };
+
+    checkExistingRide();
+    fetchActiveDrivers();
+  }, [user._id]);
+
+  // Fetch active drivers periodically
+  useEffect(() => {
+    fetchActiveDrivers(); // Initial fetch
+
+    const interval = setInterval(fetchActiveDrivers, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!user._id) return;
+
+    const socket = io("http://localhost:5001");
+
+    // Listen for ride completion
+    socket.on(`ride-completed-${user._id}`, (data) => {
+      console.log("Ride completion received:", data);
+
+      // Show success notification
+      setNotification({
+        type: "success",
+        message: data.message,
+        details: `Total fare: ₹${data.ride.fare}`,
+      });
+
+      // Clear current ride and reset to normal state
+      updateRideState(null);
+      clearAll();
+
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+    });
+
+    // Listen for driver location updates
+    socket.on("driver-location-update", (driverUpdate) => {
+      setActiveDrivers((prev) => {
+        const updatedDrivers = prev.filter(
+          (driver) => driver._id !== driverUpdate.driverId
+        );
+        if (driverUpdate.isAvailable) {
+          updatedDrivers.push({
+            _id: driverUpdate.driverId,
+            username: driverUpdate.username,
+            location: driverUpdate.location,
+            isAvailable: driverUpdate.isAvailable,
+          });
+        }
+        return updatedDrivers;
+      });
+    });
+
+    return () => socket.disconnect();
+  }, [user._id]);
 
   const handleRequestRide = async () => {
     if (!pickup || !drop || !info) {
@@ -53,7 +211,7 @@ function DesktopApp() {
         }
       );
       console.log("Ride requested successfully:", data.ride);
-      setRide(data.ride);
+      updateRideState(data.ride);
     } catch (error) {
       console.error("Error requesting ride:", error);
       alert("Failed to request ride. Please try again.");
@@ -81,8 +239,8 @@ function DesktopApp() {
       );
 
       alert("Ride cancelled successfully!");
-      setRide(null); // clear from UI
-      clearAll(); // optional, reset pickup/drop/route
+      updateRideState(null);
+      clearAll();
     } catch (error) {
       console.error("Error cancelling ride:", error);
       alert("Failed to cancel ride. Please try again.");
@@ -131,8 +289,40 @@ function DesktopApp() {
     setInfo(null);
   };
 
+  const dismissNotification = () => {
+    setNotification(null);
+  };
+
   return (
     <div className="h-screen w-full bg-white overflow-hidden">
+      {/* Success/Error Notifications */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg shadow-lg ${
+            notification.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-semibold">{notification.message}</p>
+              {notification.details && (
+                <p className="text-sm mt-1 opacity-90">
+                  {notification.details}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={dismissNotification}
+              className="ml-4 text-white hover:text-gray-200 text-xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="hidden lg:flex h-full flex-col">
         <Navbar></Navbar>
 
@@ -145,7 +335,7 @@ function DesktopApp() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   Plan your trip
                 </h1>
-                {(pickup || drop) && (
+                {(pickup || drop) && !ride && (
                   <button
                     onClick={clearAll}
                     className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
@@ -158,121 +348,154 @@ function DesktopApp() {
 
             {/* Desktop Search Section */}
             <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
-                <LocationSearch
-                  label="Pickup"
-                  placeholder="Enter pickup location"
-                  onSelect={setPickup}
-                  allowCurrentLocation={true}
-                  icon="🟢"
-                  value={pickup?.display || ""}
-                />
+              {!ride ? (
+                // Normal booking state
+                <>
+                  <div className="p-6 space-y-4">
+                    <LocationSearch
+                      label="Pickup"
+                      placeholder="Enter pickup location"
+                      onSelect={setPickup}
+                      allowCurrentLocation={true}
+                      icon="🟢"
+                      value={pickup?.display || ""}
+                    />
 
-                <LocationSearch
-                  label="Destination"
-                  placeholder="Where to?"
-                  onSelect={setDrop}
-                  icon="🔴"
-                  value={drop?.display || ""}
-                />
-              </div>
+                    <LocationSearch
+                      label="Destination"
+                      placeholder="Where to?"
+                      onSelect={setDrop}
+                      icon="🔴"
+                      value={drop?.display || ""}
+                    />
 
-              {/* Desktop Route Information */}
-              {(info || isLoadingRoute) && (
-                <div className="border-t border-gray-100 p-6">
-                  {isLoadingRoute ? (
-                    <div className="flex items-center justify-center py-8 text-gray-500">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black mr-3"></div>
-                      <span className="font-medium">Finding best route...</span>
+                    {/* Active Drivers Info */}
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-800">
+                          🚗 Available Drivers
+                        </span>
+                        <span className="text-sm font-bold text-blue-600">
+                          {activeDrivers.length}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Drivers are shown on the map with blue car icons
+                      </p>
                     </div>
-                  ) : (
-                    info && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                          Route Overview
-                        </h3>
+                  </div>
 
-                        <div className="bg-gray-50 rounded-2xl p-6 mb-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="text-center">
-                              <div className="text-3xl font-bold text-black">
-                                {info.duration}
-                              </div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                minutes
-                              </div>
-                            </div>
-
-                            <div className="text-center">
-                              <div className="text-3xl font-bold text-black">
-                                {info.distance}
-                              </div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                kilometers
-                              </div>
-                            </div>
-
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                ₹ {FareAlgo(info.distance, info.duration)}
-                              </div>
-                              <div className="text-sm text-gray-600 font-medium">
-                                estimated
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-center">
-                            <div className="text-sm text-gray-600 mb-4">
-                              Fastest route • Light traffic
-                            </div>
-                            <button
-                              onClick={handleRequestRide}
-                              className="w-full bg-black text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors"
-                            >
-                              Request Ride
-                            </button>
-                          </div>
+                  {/* Desktop Route Information */}
+                  {(info || isLoadingRoute) && (
+                    <div className="border-t border-gray-100 p-6">
+                      {isLoadingRoute ? (
+                        <div className="flex items-center justify-center py-8 text-gray-500">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black mr-3"></div>
+                          <span className="font-medium">
+                            Finding best route...
+                          </span>
                         </div>
-                        <div>
-                          {" "}
-                          {ride && (
-                            <div className="p-4 bg-green-50 rounded-xl mt-4">
-                              <div>
-                                {" "}
-                                <h3 className="font-semibold text-gray-900">
-                                  Ride Confirmed!
-                                </h3>
-                                <p>{ride.passengeId}</p>
-                                <p>
-                                  Pickup:{" "}
-                                  {ride.pickup?.display || "Custom location"}
-                                </p>
-                                <p>
-                                  Drop:{" "}
-                                  {ride.drop?.display || "Custom location"}
-                                </p>
-                                <p>Fare: ₹ {ride?.fare}</p>
-                                <p>Status: {ride?.status}</p>
+                      ) : (
+                        info && (
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                              Route Overview
+                            </h3>
+
+                            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="text-center">
+                                  <div className="text-3xl font-bold text-black">
+                                    {info.duration}
+                                  </div>
+                                  <div className="text-sm text-gray-600 font-medium">
+                                    minutes
+                                  </div>
+                                </div>
+
+                                <div className="text-center">
+                                  <div className="text-3xl font-bold text-black">
+                                    {info.distance}
+                                  </div>
+                                  <div className="text-sm text-gray-600 font-medium">
+                                    kilometers
+                                  </div>
+                                </div>
+
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-green-600">
+                                    ₹ {FareAlgo(info.distance, info.duration)}
+                                  </div>
+                                  <div className="text-sm text-gray-600 font-medium">
+                                    estimated
+                                  </div>
+                                </div>
                               </div>
-                              <div>
+
+                              <div className="text-center">
+                                <div className="text-sm text-gray-600 mb-4">
+                                  Fastest route • Light traffic
+                                </div>
                                 <button
-                                  onClick={cancelRide}
-                                  className="mt-2 w-full bg-red-500 text-white py-2 px-4 rounded-lg font-semibold text-md hover:bg-red-600 transition-colors"
+                                  onClick={handleRequestRide}
+                                  disabled={loading}
+                                  className="w-full bg-black text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                                 >
-                                  Cancel Ride
+                                  {loading ? "Requesting..." : "Request Ride"}
                                 </button>
                               </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          * Prices and times are estimates and may vary based on
-                          traffic and demand
-                        </div>
-                      </div>
-                    )
+
+                            <div className="text-xs text-gray-500">
+                              * Prices and times are estimates and may vary
+                              based on traffic and demand
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
                   )}
+                </>
+              ) : (
+                // Active ride state
+                <div className="p-6">
+                  <div className="p-4 bg-green-50 rounded-xl">
+                    <h3 className="font-semibold text-gray-900 mb-3">
+                      🚗 Ride Active
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <strong>Pickup:</strong>{" "}
+                        {ride.pickup?.display || "Custom location"}
+                      </p>
+                      <p>
+                        <strong>Drop:</strong>{" "}
+                        {ride.drop?.display || "Custom location"}
+                      </p>
+                      <p>
+                        <strong>Fare:</strong> ₹{ride?.fare}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <span className="capitalize font-medium text-green-600">
+                          {ride?.status}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-green-200">
+                      <p className="text-xs text-gray-600 mb-3">
+                        🔄 Your ride is in progress. You'll be notified when
+                        it's completed.
+                      </p>
+                      <button
+                        onClick={cancelRide}
+                        className="w-full bg-red-500 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors"
+                      >
+                        Cancel Ride
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -296,6 +519,35 @@ function DesktopApp() {
                 drop={drop}
                 setDrop={setDrop}
               />
+
+              {/* Active Drivers */}
+              {activeDrivers.map(
+                (driver) =>
+                  driver.location && (
+                    <Marker
+                      key={`driver-${driver._id}`}
+                      position={[driver.location.lat, driver.location.lng]}
+                      icon={driverIcon}
+                    >
+                      <Popup>
+                        <div className="text-sm">
+                          <strong>🚗 {driver.username}</strong>
+                          <br />
+                          <span
+                            className={`text-xs ${
+                              driver.isAvailable
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {driver.isAvailable ? "✅ Available" : "❌ Busy"}
+                          </span>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+              )}
+
               {route.length > 0 && (
                 <>
                   <Polyline
