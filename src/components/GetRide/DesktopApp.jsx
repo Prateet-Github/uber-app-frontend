@@ -9,6 +9,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import io from "socket.io-client";
 import L from "leaflet";
+import { useNavigate } from "react-router-dom";
 
 import {
   LocationMarkers,
@@ -42,6 +43,8 @@ function DesktopApp() {
   });
   const [notification, setNotification] = useState(null);
   const [activeDrivers, setActiveDrivers] = useState([]);
+
+  
 
   // Get user info for socket connection
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -132,52 +135,56 @@ function DesktopApp() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (!user._id) return;
+  const navigate = useNavigate();
+ useEffect(() => {
+  if (!user._id) return;
 
-    const socket = io("http://localhost:5001");
+  const socket = io("http://localhost:5001");
 
-    // Listen for ride completion
-    socket.on(`ride-completed-${user._id}`, (data) => {
-      console.log("Ride completion received:", data);
+  // Listen for ride completion
+  socket.on(`ride-completed-${user._id}`, (data) => {
+    console.log("Ride completion received:", data);
 
-      // Show success notification
-      setNotification({
-        type: "success",
-        message: data.message,
-        details: `Total fare: ₹${data.ride.fare}`,
-      });
-
-      // Clear current ride and reset to normal state
-      updateRideState(null);
-      clearAll();
-
-      // Auto-hide notification after 5 seconds
-      setTimeout(() => {
-        setNotification(null);
-      }, 5000);
+    // Show success notification
+    setNotification({
+      type: "success",
+      message: data.message,
+      details: `Total fare: ₹${data.ride.fare}`,
     });
 
-    // Listen for driver location updates
-    socket.on("driver-location-update", (driverUpdate) => {
-      setActiveDrivers((prev) => {
-        const updatedDrivers = prev.filter(
-          (driver) => driver._id !== driverUpdate.driverId
-        );
-        if (driverUpdate.isAvailable) {
-          updatedDrivers.push({
-            _id: driverUpdate.driverId,
-            username: driverUpdate.username,
-            location: driverUpdate.location,
-            isAvailable: driverUpdate.isAvailable,
-          });
-        }
-        return updatedDrivers;
-      });
-    });
+    // Clear current ride and reset state
+    updateRideState(null);
+    clearAll();
 
-    return () => socket.disconnect();
-  }, [user._id]);
+    // Navigate to payment page using React Router
+    navigate(`/payment/${data.ride._id}`);
+
+    // Auto-hide notification after 5 seconds
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  });
+
+  // Listen for driver location updates
+  socket.on("driver-location-update", (driverUpdate) => {
+    setActiveDrivers((prev) => {
+      const updatedDrivers = prev.filter(
+        (driver) => driver._id !== driverUpdate.driverId
+      );
+      if (driverUpdate.isAvailable) {
+        updatedDrivers.push({
+          _id: driverUpdate.driverId,
+          username: driverUpdate.username,
+          location: driverUpdate.location,
+          isAvailable: driverUpdate.isAvailable,
+        });
+      }
+      return updatedDrivers;
+    });
+  });
+
+  return () => socket.disconnect();
+}, [user._id, navigate]);
 
   const handleRequestRide = async () => {
     if (!pickup || !drop || !info) {

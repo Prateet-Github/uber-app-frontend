@@ -39,7 +39,7 @@ const App = () => {
           element={<DriverDashboard></DriverDashboard>}
         ></Route>
         <Route path="/adminlogin" element={<AdminLogin></AdminLogin>}></Route>
-        <Route path="/payment" element={<PaymentPage></PaymentPage>}></Route>
+        <Route path="/payment/:rideId" element={<PaymentPage></PaymentPage>}></Route>
         <Route path="/loading" element={<Loading></Loading>}></Route>
       </Routes>
     </div>
