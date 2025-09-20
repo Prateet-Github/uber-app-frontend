@@ -9,6 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../context/authContext";
+import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5001/api";
 
@@ -58,75 +59,60 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-  const handleApprove = async (userId) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/driver/approve-driver/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+const handleApprove = async (userId) => {
+  if (!userId) return alert("Invalid user ID");
 
-      if (response.ok) {
-        const data = await response.json();
-        setPendingRequests((prev) => prev.filter((req) => req._id !== userId));
-        setStats((prev) => ({
-          ...prev,
-          pendingRequests: prev.pendingRequests - 1,
-          activeDrivers: prev.activeDrivers + 1,
-        }));
-        alert("Driver approved successfully!");
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("Error approving driver:", error);
-      alert("Error connecting to server");
-    }
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    const { data } = await axios.put(
+      `${API_BASE_URL}/driver/approve-driver/${userId}`,
+      {}, // empty body
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Update UI
+    setPendingRequests(prev => prev.filter(req => req._id !== userId));
+    setStats(prev => ({
+      ...prev,
+      pendingRequests: prev.pendingRequests - 1,
+      activeDrivers: prev.activeDrivers + 1,
+    }));
+
+    alert(data.message || "Driver approved successfully!");
+  } catch (error) {
+    console.error("Error approving driver:", error.response?.data || error.message);
+    alert(`Error approving driver: ${error.response?.data?.message || error.message}`);
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
-  const handleReject = async (userId) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/driver/reject-driver/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      if (response.ok) {
-        const data = await response.json();
-        setPendingRequests((prev) => prev.filter((req) => req._id !== userId));
-        setStats((prev) => ({
-          ...prev,
-          pendingRequests: prev.pendingRequests - 1,
-        }));
-        alert("Driver request rejected");
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("Error rejecting driver:", error);
-      alert("Error connecting to server");
-    }
+const handleReject = async (userId) => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    const { data } = await axios.put(
+      `${API_BASE_URL}/driver/reject-driver/${userId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setPendingRequests(prev => prev.filter(req => req._id !== userId));
+    setStats(prev => ({
+      ...prev,
+      pendingRequests: prev.pendingRequests - 1,
+    }));
+
+    alert(data.message || "Driver request rejected");
+  } catch (error) {
+    console.error("Error rejecting driver:", error.response?.data || error.message);
+    alert(`Error rejecting driver: ${error.response?.data?.message || error.message}`);
+  } finally {
     setLoading(false);
-  };
-
+  }
+};
   // Removed duplicate fetchPendingRequests function
 
   return (

@@ -1,3 +1,5 @@
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   ChevronUp,
@@ -6,30 +8,59 @@ import {
   User,
   GraduationCap,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "./../../context/authContext";
+import Loading from "./Loading"; // your loading component
+import toast from "react-hot-toast";
 
 export default function UberLandingPage() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDown, setIsDown] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true); // new loading state
+  const [showPage, setShowPage] = useState(true); // Initially show page
 
+  const [showLoading, setShowLoading] = useState(false); // Show loading later
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDown(false);
+    if (dropdownRef.current) {
+      function handleClickOutside(event) {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target)
+        ) {
+          setIsDown(false);
+        }
       }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
   }, []);
+
+  // New effect: redirect if already a driver
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role?.toLowerCase().trim() === "driver") {
+      const pageTimer = setTimeout(() => {
+        toast("You are already a driver! Redirecting...", { duration: 3000 });
+
+        setShowPage(false);
+        setShowLoading(true);
+
+        setTimeout(() => {
+          navigate("/driverdashboard");
+        }, 2000);
+      }, 1000);
+
+      return () => clearTimeout(pageTimer);
+    }
+  }, [user, navigate]);
+
+  if (showLoading) return <Loading />;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -70,7 +101,7 @@ export default function UberLandingPage() {
                 Login
               </Link>
               <Link to="/login">
-                <button className="px-4 py-2 rounded-3xl bg-black  text-white font-medium">
+                <button className="px-4 py-2 rounded-3xl bg-black text-white font-medium">
                   Sign Up
                 </button>
               </Link>
@@ -92,9 +123,10 @@ export default function UberLandingPage() {
                 </div>
               </button>
               {isDown && (
-                <div className="absolute right-0 mt-2  p-4 bg-white text-black rounded-lg shadow-lg  z-10 flex flex-col shadow-gray-600">
+                <div className="absolute right-0 mt-2 p-4 bg-white text-black rounded-lg shadow-lg z-10 flex flex-col shadow-gray-600">
+                  {/* Dropdown items */}
                   <div className="flex flex-col">
-                    <div className="cursor-pointer  py-4 px-3 flex items-center">
+                    <div className="cursor-pointer py-4 px-3 flex items-center">
                       <User size={20} className="mr-2" />
                       <span>Drive & Deliver</span>
                     </div>
@@ -138,19 +170,16 @@ export default function UberLandingPage() {
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight mb-8">
             Drive when you want, make what you need
           </h1>
-
           <p className="text-xl text-gray-300 mb-12 max-w-md">
             Earn on your own schedule.
           </p>
-
           <div className="flex flex-col sm:flex-row items-start gap-4">
             <button
               onClick={() => (window.location.href = "/tab1")}
-              className="bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors "
+              className="bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
             >
               Get started
             </button>
-
             <button className="text-white underline underline-offset-4 hover:text-gray-300 transition-colors text-lg">
               Already have an account? Sign in
             </button>
@@ -161,7 +190,6 @@ export default function UberLandingPage() {
         <div className="flex-1 flex justify-end">
           <div className="relative">
             <div className="w-96 h-96 bg-gradient-to-br from-gray-700 to-gray-900 rounded-3xl overflow-hidden">
-              {/* Placeholder for the driver illustration */}
               <div className="w-full h-full flex items-center justify-center">
                 <img
                   src="./driver.webp"

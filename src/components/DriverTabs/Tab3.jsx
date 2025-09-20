@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
 import { useRef, useState, useEffect } from "react";
-
 import {
   ChevronDown,
   ChevronUp,
@@ -12,12 +11,30 @@ import {
 } from "lucide-react";
 
 const Tab3 = () => {
-  // Handle driver request submission
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const [isDown, setIsDown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [driverRequestStatus, setDriverRequestStatus] = useState("none"); // none | pending | accepted
+  const dropdownRef = useRef(null);
+
+  // Close dropdown if click happens outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 🔹 Handle driver request submission
   const handleDriverRequest = async () => {
     try {
-      setLoading(true); // Add loading state
-
-      const token = localStorage.getItem("token"); // Get user token
+      setLoading(true);
+      const token = localStorage.getItem("token");
       const response = await fetch(
         "http://localhost:5001/api/driver/request-driver",
         {
@@ -28,48 +45,22 @@ const Tab3 = () => {
           },
         }
       );
-
       const data = await response.json();
 
       if (response.ok) {
-        alert("Driver request submitted successfully!");
-        // Update UI to show pending status
         setDriverRequestStatus("pending");
+        alert("✅ Driver request submitted successfully!");
+        navigate("/pending");
       } else {
         alert(data.message || "Failed to submit request");
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Error submitting request");
+      console.error("Error submitting request:", error);
+      alert("❌ Error submitting request");
     } finally {
       setLoading(false);
     }
   };
-
-  const { user, signOut } = useAuth();
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDown, setIsDown] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [driverRequestStatus, setDriverRequestStatus] = useState("none"); // none, pending, approved, rejected
-
-  const dropdownRef = useRef(null);
-
-  // Close dropdown if click happens outside
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDown(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const steps = [
     { id: 1, title: "Driving License - Front", status: "next" },
@@ -78,17 +69,6 @@ const Tab3 = () => {
     { id: 4, title: "Registration Certificate (RC)", status: "pending" },
     { id: 5, title: "Preferred Language", status: "completed" },
   ];
-
-  const getStatusColor = (status) => {
-    if (status === "completed") return "text-green-600";
-    if (status === "next") return "text-blue-600";
-    return "text-gray-500";
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    window.location.href = "/pending";
-  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -101,7 +81,7 @@ const Tab3 = () => {
               Login
             </Link>
             <Link to="/login">
-              <button className="px-4 py-2 rounded-3xl bg-black  text-white font-medium">
+              <button className="px-4 py-2 rounded-3xl bg-black text-white font-medium">
                 Sign Up
               </button>
             </Link>
@@ -112,8 +92,8 @@ const Tab3 = () => {
               onClick={() => setIsDown(!isDown)}
               className="bg-white text-black px-4 py-2 rounded-3xl font-medium"
             >
-              <div className="flex items-center rounded-full cursor-pointer transition-colors">
-                <p className="text-sm font-medium">Help </p>
+              <div className="flex items-center cursor-pointer">
+                <p className="text-sm font-medium">Help</p>
                 {isDown ? (
                   <ChevronUp className="w-4 h-4" />
                 ) : (
@@ -122,9 +102,9 @@ const Tab3 = () => {
               </div>
             </button>
             {isDown && (
-              <div className="absolute right-0 mt-2  p-4 bg-white text-black rounded-lg shadow-lg  z-10 flex flex-col shadow-gray-600">
+              <div className="absolute right-0 mt-2 p-4 bg-white text-black rounded-lg shadow-lg z-10 flex flex-col shadow-gray-600">
                 <div className="flex flex-col">
-                  <div className="cursor-pointer  py-4 px-3 flex items-center">
+                  <div className="cursor-pointer py-4 px-3 flex items-center">
                     <Languages size={20} className="mr-2" />
                     <span>Change my language</span>
                   </div>
@@ -136,13 +116,12 @@ const Tab3 = () => {
                     <BadgeHelp size={20} className="mr-2" />
                     <span>Get help with my account</span>
                   </div>
-
-                  <div className="border-t border-gray-300 pt-6 justify-center flex py-4">
+                  <div className="border-t border-gray-300 pt-6 flex justify-center">
                     <button
                       onClick={signOut}
-                      className="text-red-500 px-30 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                      className="text-red-500 px-6 py-2 rounded-2xl bg-gray-100 hover:bg-gray-200"
                     >
-                      Signout
+                      Sign out
                     </button>
                   </div>
                 </div>
@@ -153,15 +132,11 @@ const Tab3 = () => {
       </header>
 
       {/* Content */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col items-center mt-12 px-6"
-      >
+      <div className="flex flex-col items-center mt-12 px-6">
         <p className="text-sm text-gray-600">Signing up for</p>
         <p className="text-sm font-medium mb-6">Delhi NCR • Rides • 🚴</p>
 
         <h2 className="text-3xl font-bold mb-2">
-          {/* whats the issue */}
           Welcome, <span>{user?.username}</span>
         </h2>
         <p className="text-gray-600 mb-10">
@@ -191,13 +166,13 @@ const Tab3 = () => {
 
           <button
             onClick={handleDriverRequest}
-            type="submit"
-            className="w-full bg-black text-white py-3 rounded-3xl font-medium hover:bg-gray-800 transition-colors"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded-3xl font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            Request to become a driver
+            {loading ? "Submitting..." : "Request to become a driver"}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

@@ -22,6 +22,8 @@ const PaymentPage = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
+        // Artificial delay
+        await new Promise((resolve) => setTimeout(resolve, 1200)); 
         setRideDetails(data.ride);
       } else {
         toast.error(data.message || "Failed to fetch ride details");
@@ -52,7 +54,8 @@ const PaymentPage = () => {
 
   if (loading) return <Loading />;
 
-  if (!rideDetails) return <p className="text-center mt-10">Ride details not found.</p>;
+  if (!rideDetails)
+    return <p className="text-center mt-10">Ride details not found.</p>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 flex justify-center items-center">
@@ -79,7 +82,9 @@ const PaymentPage = () => {
           disabled={paymentProcessing}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
         >
-          {paymentProcessing ? "Processing Payment..." : `Pay ₹${rideDetails.fare}`}
+          {paymentProcessing
+            ? "Processing Payment..."
+            : `Pay ₹${rideDetails.fare}`}
         </button>
       </div>
     </div>
