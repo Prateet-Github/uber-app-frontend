@@ -62,6 +62,33 @@ function DesktopApp() {
     }
   };
 
+  const cancelRide = async () => {
+    if (!ride?._id) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to cancel a ride.");
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `http://localhost:5001/api/rides/${ride._id}/cancel`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      alert("Ride cancelled successfully!");
+      setRide(null); // clear from UI
+      clearAll(); // optional, reset pickup/drop/route
+    } catch (error) {
+      console.error("Error cancelling ride:", error);
+      alert("Failed to cancel ride. Please try again.");
+    }
+  };
+
   useEffect(() => {
     if (pickup && drop) {
       const fetchRoute = async () => {
@@ -211,19 +238,31 @@ function DesktopApp() {
                           {" "}
                           {ride && (
                             <div className="p-4 bg-green-50 rounded-xl mt-4">
-                              <h3 className="font-semibold text-gray-900">
-                                Ride Confirmed!
-                              </h3>
-                              <p>{ride.passengeId}</p>
-                              <p>
-                                Pickup:{" "}
-                                {ride.pickup?.display || "Custom location"}
-                              </p>
-                              <p>
-                                Drop: {ride.drop?.display || "Custom location"}
-                              </p>
-                              <p>Fare: ₹ {ride?.fare}</p>
-                              <p>Status: {ride?.status}</p>
+                              <div>
+                                {" "}
+                                <h3 className="font-semibold text-gray-900">
+                                  Ride Confirmed!
+                                </h3>
+                                <p>{ride.passengeId}</p>
+                                <p>
+                                  Pickup:{" "}
+                                  {ride.pickup?.display || "Custom location"}
+                                </p>
+                                <p>
+                                  Drop:{" "}
+                                  {ride.drop?.display || "Custom location"}
+                                </p>
+                                <p>Fare: ₹ {ride?.fare}</p>
+                                <p>Status: {ride?.status}</p>
+                              </div>
+                              <div>
+                                <button
+                                  onClick={cancelRide}
+                                  className="mt-2 w-full bg-red-500 text-white py-2 px-4 rounded-lg font-semibold text-md hover:bg-red-600 transition-colors"
+                                >
+                                  Cancel Ride
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
