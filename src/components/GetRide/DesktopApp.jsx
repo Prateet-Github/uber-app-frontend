@@ -44,8 +44,6 @@ function DesktopApp() {
   const [notification, setNotification] = useState(null);
   const [activeDrivers, setActiveDrivers] = useState([]);
 
-  
-
   // Get user info for socket connection
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -79,6 +77,20 @@ function DesktopApp() {
 
   // Socket connection for real-time updates
   // Check for existing ride on component mount
+
+  const getLocationName = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=en`
+      );
+      const data = await res.json();
+      return data.display_name || "Unknown Location";
+    } catch (error) {
+      console.error("Error fetching location name:", error);
+      return "Unknown Location";
+    }
+  };
+
   useEffect(() => {
     const checkExistingRide = async () => {
       const token = localStorage.getItem("token");
@@ -107,7 +119,22 @@ function DesktopApp() {
           updateRideState(data.ride);
 
           // If there's a ride, also set the pickup/drop locations
-          if (data.ride.pickup && data.ride.drop) {
+          if (data.ride && data.ride.pickup && data.ride.drop) {
+            const pickupName = await getLocationName(
+              data.ride.pickup.lat,
+              data.ride.pickup.lng
+            );
+            const dropName = await getLocationName(
+              data.ride.drop.lat,
+              data.ride.drop.lng
+            );
+
+            updateRideState({
+              ...data.ride,
+              pickupName,
+              dropName,
+            });
+
             setPickup(data.ride.pickup);
             setDrop(data.ride.drop);
           }
@@ -136,55 +163,55 @@ function DesktopApp() {
   }, []);
 
   const navigate = useNavigate();
- useEffect(() => {
-  if (!user._id) return;
+  useEffect(() => {
+    if (!user._id) return;
 
-  const socket = io("http://localhost:5001");
+    const socket = io("http://localhost:5001");
 
-  // Listen for ride completion
-  socket.on(`ride-completed-${user._id}`, (data) => {
-    console.log("Ride completion received:", data);
+    // Listen for ride completion
+    socket.on(`ride-completed-${user._id}`, (data) => {
+      console.log("Ride completion received:", data);
 
-    // Show success notification
-    setNotification({
-      type: "success",
-      message: data.message,
-      details: `Total fare: ₹${data.ride.fare}`,
+      // Show success notification
+      setNotification({
+        type: "success",
+        message: data.message,
+        details: `Total fare: ₹${data.ride.fare}`,
+      });
+
+      // Clear current ride and reset state
+      updateRideState(null);
+      clearAll();
+
+      // Navigate to payment page using React Router
+      navigate(`/payment/${data.ride._id}`);
+
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+        setNotification(null);
+      }, 5000);
     });
 
-    // Clear current ride and reset state
-    updateRideState(null);
-    clearAll();
-
-    // Navigate to payment page using React Router
-    navigate(`/payment/${data.ride._id}`);
-
-    // Auto-hide notification after 5 seconds
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
-  });
-
-  // Listen for driver location updates
-  socket.on("driver-location-update", (driverUpdate) => {
-    setActiveDrivers((prev) => {
-      const updatedDrivers = prev.filter(
-        (driver) => driver._id !== driverUpdate.driverId
-      );
-      if (driverUpdate.isAvailable) {
-        updatedDrivers.push({
-          _id: driverUpdate.driverId,
-          username: driverUpdate.username,
-          location: driverUpdate.location,
-          isAvailable: driverUpdate.isAvailable,
-        });
-      }
-      return updatedDrivers;
+    // Listen for driver location updates
+    socket.on("driver-location-update", (driverUpdate) => {
+      setActiveDrivers((prev) => {
+        const updatedDrivers = prev.filter(
+          (driver) => driver._id !== driverUpdate.driverId
+        );
+        if (driverUpdate.isAvailable) {
+          updatedDrivers.push({
+            _id: driverUpdate.driverId,
+            username: driverUpdate.username,
+            location: driverUpdate.location,
+            isAvailable: driverUpdate.isAvailable,
+          });
+        }
+        return updatedDrivers;
+      });
     });
-  });
 
-  return () => socket.disconnect();
-}, [user._id, navigate]);
+    return () => socket.disconnect();
+  }, [user._id, navigate]);
 
   const handleRequestRide = async () => {
     if (!pickup || !drop || !info) {
@@ -473,11 +500,11 @@ function DesktopApp() {
                     <div className="space-y-2 text-sm">
                       <p>
                         <strong>Pickup:</strong>{" "}
-                        {ride.pickup?.display || "Custom location"}
+                        {ride?.pickupName || "Custom location"}
                       </p>
                       <p>
                         <strong>Drop:</strong>{" "}
-                        {ride.drop?.display || "Custom location"}
+                        {ride?.dropName || "Custom location"}
                       </p>
                       <p>
                         <strong>Fare:</strong> ₹{ride?.fare}

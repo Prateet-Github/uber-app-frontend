@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Loading from "./Loading";
 import toast from "react-hot-toast";
+import { latLng } from "leaflet";
 
 const PaymentPage = () => {
   const { rideId } = useParams();
@@ -12,6 +13,19 @@ const PaymentPage = () => {
   const [rideDetails, setRideDetails] = useState(null);
 
   const token = localStorage.getItem("token");
+
+  const getLocationName = async (lat, lng) => {
+    try {
+      const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=en`
+    );
+      const data = await res.json();
+      return data.display_name || "Unknown Location";
+    } catch (error) {
+      console.error("Error fetching location name:", error);
+      return "Unknown Location";
+    }
+  };
 
   // Fetch ride payment details
   const fetchRideDetails = async () => {
@@ -23,8 +37,22 @@ const PaymentPage = () => {
       );
       if (data.success) {
         // Artificial delay
-        await new Promise((resolve) => setTimeout(resolve, 1200)); 
-        setRideDetails(data.ride);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+
+        const ride = data.ride;
+
+        // Convert pickup & drop to names
+        const pickupName = await getLocationName(
+          ride.pickup.lat,
+          ride.pickup.lng
+        );
+        const dropName = await getLocationName(ride.drop.lat, ride.drop.lng);
+
+        setRideDetails({
+          ...ride,
+          pickupName,
+          dropName,
+        });
       } else {
         toast.error(data.message || "Failed to fetch ride details");
       }
@@ -64,16 +92,21 @@ const PaymentPage = () => {
 
         <div className="mb-6 space-y-2 text-gray-700">
           <p>
-            <strong>Pickup:</strong> {rideDetails.pickup?.display || "Unknown"}
+            <strong>Pickup:</strong> {rideDetails?.pickupName || "Unknown"}
           </p>
           <p>
-            <strong>Drop:</strong> {rideDetails.drop?.display || "Unknown"}
+            <strong>Drop:</strong> {rideDetails?.dropName || "Unknown"}
+          </p>
+
+          <p>
+            <strong>Fare:</strong> ₹{rideDetails?.fare}
           </p>
           <p>
-            <strong>Driver:</strong> {rideDetails.driver || "N/A"}
+            <strong>Driver Name:</strong> {(rideDetails?.driver).toUpperCase()}
           </p>
           <p>
-            <strong>Fare:</strong> ₹{rideDetails.fare}
+            <strong>Rider Name:</strong>{" "}
+            {(rideDetails?.passenger).toUpperCase()}
           </p>
         </div>
 

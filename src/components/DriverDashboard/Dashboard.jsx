@@ -12,104 +12,151 @@ import "leaflet/dist/leaflet.css";
 const DriverDashboard = () => {
   const [rides, setRides] = useState([]);
   const [currentRide, setCurrentRide] = useState(() => {
-    // Initialize currentRide from localStorage
     const savedRide = localStorage.getItem("driverCurrentRide");
     return savedRide ? JSON.parse(savedRide) : null;
   });
   const [driverLocation, setDriverLocation] = useState(() => {
-    // Initialize driver location from localStorage
     const savedLocation = localStorage.getItem("driverLocation");
+
     return savedLocation ? JSON.parse(savedLocation) : null;
   });
+
   const token = localStorage.getItem("token");
 
-  // Helper function to update currentRide state and localStorage
-  const updateCurrentRide = (newRide) => {
-    setCurrentRide(newRide);
-    if (newRide) {
-      localStorage.setItem("driverCurrentRide", JSON.stringify(newRide));
-    } else {
-      localStorage.removeItem("driverCurrentRide");
+  const getLocationName = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=en`
+      );
+      const data = await res.json();
+      return data.display_name || "Unknown Location";
+    } catch (err) {
+      return "Unknown Location";
     }
   };
 
-  // Helper function to update driver location and localStorage
+  // Helpers
+  const updateCurrentRide = (ride) => {
+    setCurrentRide(ride);
+    if (ride) localStorage.setItem("driverCurrentRide", JSON.stringify(ride));
+    else localStorage.removeItem("driverCurrentRide");
+  };
+
   const updateDriverLocation = (location) => {
     setDriverLocation(location);
-    if (location) {
+    if (location)
       localStorage.setItem("driverLocation", JSON.stringify(location));
-    }
   };
 
-  // Check for existing accepted ride on component mount
+  // Fetch driver's active ride on mount
   useEffect(() => {
     const checkDriverStatus = async () => {
-      const token = localStorage.getItem("token");
       if (!token) return;
-
       try {
-        // Check if driver has an active ride
         const { data } = await axios.get(
           "http://localhost:5001/api/driver-decision/status",
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        if (data.success && data.driver) {
-          // If driver has a current ride, restore it
-          if (data.driver.currentRide) {
-            // Fetch the full ride details
-            const rideResponse = await axios.get(
-              `http://localhost:5001/api/rides/${data.driver.currentRide}`,
-              {
-                headers: { Authorization: `Bearer ${token}` }
+        if (data.success && data.driver?.currentRide) {
+          const rideResponse = await axios.get(
+            `http://localhost:5001/api/rides/${data.driver.currentRide}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (rideResponse.data.ride) {
+            const ride = rideResponse.data.ride;
+
+            // Get pickup and drop names
+            let pickupName = "Unknown";
+            let dropName = "Unknown";
+
+            try {
+              if (ride.pickup) {
+                pickupName = await getLocationName(
+                  ride.pickup.lat,
+                  ride.pickup.lng
+                );
               }
-            );
-            
-            if (rideResponse.data.ride) {
-              updateCurrentRide(rideResponse.data.ride._id);
+              if (ride.drop) {
+                dropName = await getLocationName(ride.drop.lat, ride.drop.lng);
+              }
+            } catch (err) {
+              console.error(
+                "Error fetching location names for current ride:",
+                err
+              );
             }
-          } else {
-            // No active ride, clear localStorage
-            updateCurrentRide(null);
+
+            updateCurrentRide({ ...ride, pickupName, dropName });
           }
         }
-      } catch (error) {
-        console.error("Error checking driver status:", error);
-        // Clear invalid ride data
+      } catch (err) {
+        console.error("Error checking driver status:", err);
         updateCurrentRide(null);
       }
     };
 
     checkDriverStatus();
-  }, []);
+  }, [token]);
 
   // Fetch pending rides
+
   const fetchRides = async () => {
+    if (!token) return;
+
     try {
-      const { data } = await axios.get(
+      // Fetch rides from backend
+      const response = await axios.get(
         "http://localhost:5001/api/driver-decision/pending",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setRides(data.rides || []);
+
+      const ridesData = response.data.rides || [];
+
+      const ridesWithNames = await Promise.all(
+        ridesData.map(async (ride) => {
+          let pickupName = "Unknown";
+          let dropName = "Unknown";
+
+          try {
+            if (ride.pickup) {
+              pickupName = await getLocationName(
+                ride.pickup.lat,
+                ride.pickup.lng
+              );
+            }
+            if (ride.drop) {
+              dropName = await getLocationName(ride.drop.lat, ride.drop.lng);
+            }
+          } catch (err) {
+            console.error(
+              "Error fetching location names for ride:",
+              ride._id,
+              err
+            );
+          }
+
+          return { ...ride, pickupName, dropName };
+        })
+      );
+
+      setRides(ridesWithNames);
     } catch (err) {
-      console.error("Failed to fetch rides:", err);
+      console.error("Error fetching rides:", err);
+      setRides([]);
     }
   };
 
   // Accept ride
   const handleAccept = async (rideId) => {
     try {
-      await axios.patch(
+      const { data } = await axios.patch(
         `http://localhost:5001/api/rides/${rideId}/accept`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Ride accepted!");
-      updateCurrentRide(rideId);
+      updateCurrentRide(data.ride); // set full ride object
       fetchRides();
     } catch (err) {
       console.error(err);
@@ -135,6 +182,7 @@ const DriverDashboard = () => {
 
   // Clear current ride
   const clearCurrentRide = async () => {
+    if (!currentRide?._id) return;
     try {
       await axios.patch(
         `http://localhost:5001/api/driver-decision/clear-ride`,
@@ -145,56 +193,49 @@ const DriverDashboard = () => {
       fetchRides();
       alert("Ride cleared successfully!");
     } catch (err) {
-      console.error("Full error:", err);
-      console.error("Error response:", err.response?.data);
-      alert(`Failed to clear ride: ${err.response?.data?.message || err.message}`);
+      console.error("Error clearing ride:", err.response?.data || err.message);
+      alert(
+        `Failed to clear ride: ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
   // Update driver location every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const newLocation = { lat: latitude, lng: longitude };
-        updateDriverLocation(newLocation);
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const newLocation = { lat: latitude, lng: longitude };
+          updateDriverLocation(newLocation);
 
-        try {
-          await axios.patch(
-            `http://localhost:5001/api/driver-decision/location`,
-            { lat: latitude, lng: longitude },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-        } catch (err) {
-          console.error("Failed to update location:", err);
-        }
-      }, (error) => {
-        console.error("Geolocation error:", error);
-      });
+          try {
+            await axios.patch(
+              `http://localhost:5001/api/driver-decision/location`,
+              { lat: latitude, lng: longitude },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          } catch (err) {
+            console.error("Failed to update location:", err);
+          }
+        },
+        (error) => console.error("Geolocation error:", error)
+      );
     }, 5000);
 
     return () => clearInterval(interval);
   }, [token]);
 
-  // Fetch rides on component mount
   useEffect(() => {
     fetchRides();
   }, []);
 
-  // Get current ride details for display
-  const getCurrentRideDetails = () => {
-    if (!currentRide) return null;
-    return rides.find(ride => ride._id === currentRide);
-  };
-
-  const currentRideDetails = getCurrentRideDetails();
-
   return (
     <div className="flex h-screen">
-      {/* Left side - Requests */}
+      {/* Left side - requests */}
       <div className="w-1/3 bg-gray-100 p-4 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-4">Driver Dashboard</h1>
-        
+
         {/* Driver Status */}
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm font-medium text-blue-800">
@@ -205,21 +246,31 @@ const DriverDashboard = () => {
           </p>
         </div>
 
-        {/* Current Ride Section */}
+        {/* Current Ride */}
         {currentRide && (
           <div className="mb-6 p-4 border rounded bg-yellow-100">
             <h2 className="font-bold mb-2">🚗 Current Ride</h2>
-            {currentRideDetails ? (
-              <div className="text-sm space-y-1">
-                <p><strong>Passenger:</strong> {currentRideDetails.passengerId?.username || "N/A"}</p>
-                <p><strong>Pickup:</strong> {currentRideDetails.pickup?.display || "Unknown"}</p>
-                <p><strong>Drop:</strong> {currentRideDetails.drop?.display || "Unknown"}</p>
-                <p><strong>Fare:</strong> ₹{currentRideDetails.fare}</p>
-                <p><strong>Status:</strong> <span className="capitalize font-medium">{currentRideDetails.status}</span></p>
-              </div>
-            ) : (
-              <p className="text-sm">Ride ID: {currentRide}</p>
-            )}
+            <div className="text-sm space-y-1">
+              <p>
+                <strong>Passenger:</strong>{" "}
+                {currentRide.passengerId?.username || "N/A"}
+              </p>
+              <p>
+                <strong>Pickup:</strong> {currentRide.pickupName || "Unknown"}
+              </p>
+              <p>
+                <strong>Drop:</strong> {currentRide.dropName || "Unknown"}
+              </p>
+              <p>
+                <strong>Fare:</strong> ₹{currentRide.fare}
+              </p>
+              <p>
+                <strong>Status:</strong>{" "}
+                <span className="capitalize font-medium">
+                  {currentRide.status}
+                </span>
+              </p>
+            </div>
             <button
               className="mt-3 w-full bg-yellow-500 text-white px-4 py-2 rounded font-semibold hover:bg-yellow-600"
               onClick={clearCurrentRide}
@@ -234,14 +285,12 @@ const DriverDashboard = () => {
           <h2 className="text-lg font-semibold mb-3">
             📋 Pending Rides ({rides.length})
           </h2>
-          
           {rides.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p className="font-medium">No pending rides</p>
               <p className="text-sm">New requests will appear here</p>
             </div>
           )}
-
           <ul className="space-y-4">
             {rides.map((ride) => (
               <li key={ride._id} className="border p-4 rounded shadow bg-white">
@@ -251,10 +300,10 @@ const DriverDashboard = () => {
                     {ride.passengerId?.username || "N/A"}
                   </p>
                   <p>
-                    <strong>📍 Pickup:</strong> {ride.pickup?.display || "Unknown"}
+                    <strong>📍 Pickup:</strong> {ride.pickupName || "Unknown"}
                   </p>
                   <p>
-                    <strong>🎯 Drop:</strong> {ride.drop?.display || "Unknown"}
+                    <strong>🎯 Drop:</strong> {ride.dropName || "Unknown"}
                   </p>
                   <p>
                     <strong>💰 Fare:</strong> ₹{ride.fare}
@@ -263,7 +312,6 @@ const DriverDashboard = () => {
                     <strong>📏 Distance:</strong> {ride.distance} km
                   </p>
                 </div>
-                
                 <div className="mt-3 flex gap-2">
                   <button
                     className="flex-1 bg-green-500 text-white px-3 py-2 rounded font-semibold text-sm hover:bg-green-600 disabled:opacity-50"
@@ -289,7 +337,11 @@ const DriverDashboard = () => {
       {/* Right side - Map */}
       <div className="flex-1">
         <MapContainer
-          center={driverLocation ? [driverLocation.lat, driverLocation.lng] : [28.6139, 77.209]}
+          center={
+            driverLocation
+              ? [driverLocation.lat, driverLocation.lng]
+              : [28.6139, 77.209]
+          }
           zoom={12}
           scrollWheelZoom={true}
           className="w-full h-full"
@@ -304,14 +356,15 @@ const DriverDashboard = () => {
             <Marker position={[driverLocation.lat, driverLocation.lng]}>
               <Popup>
                 <div className="text-sm">
-                  <strong>🚗 Your Location</strong><br />
+                  <strong>🚗 Your Location</strong>
+                  <br />
                   Status: {currentRide ? "On Ride" : "Available"}
                 </div>
               </Popup>
             </Marker>
           )}
 
-          {/* Rides */}
+          {/* Ride Polylines & Markers */}
           {rides.map((ride) => (
             <div key={ride._id}>
               {ride.pickup && ride.drop && (
@@ -320,27 +373,27 @@ const DriverDashboard = () => {
                     [ride.pickup.lat, ride.pickup.lng],
                     [ride.drop.lat, ride.drop.lng],
                   ]}
-                  color={ride._id === currentRide ? "#FF0000" : "#0000FF"}
-                  weight={ride._id === currentRide ? 6 : 4}
-                  opacity={ride._id === currentRide ? 1 : 0.6}
+                  color={currentRide?._id === ride._id ? "#FF0000" : "#0000FF"}
+                  weight={currentRide?._id === ride._id ? 6 : 4}
+                  opacity={currentRide?._id === ride._id ? 1 : 0.6}
                 />
               )}
 
               {ride.pickup && (
-                <Marker
-                  position={[ride.pickup.lat, ride.pickup.lng]}
-                >
+                <Marker position={[ride.pickup.lat, ride.pickup.lng]}>
                   <Popup>
                     <div className="text-sm">
-                      <strong>📍 Pickup</strong><br />
-                      {ride.pickup.display || "Unknown"}<br />
-                      <strong>👤 Passenger:</strong> {ride.passengerId?.username || "N/A"}<br />
+                      <strong>📍 Pickup</strong>
+                      <br />
+                      {ride.pickup.display || "Unknown"}
+                      <br />
+                      <strong>👤 Passenger:</strong>{" "}
+                      {ride.passengerId?.username || "N/A"}
+                      <br />
                       <strong>💰 Fare:</strong> ₹{ride.fare}
-                      {ride._id === currentRide && (
-                        <>
-                          <br />
-                          <strong className="text-red-600">🚗 ACTIVE RIDE</strong>
-                        </>
+                      {currentRide?._id === ride._id && <br />}
+                      {currentRide?._id === ride._id && (
+                        <strong className="text-red-600">🚗 ACTIVE RIDE</strong>
                       )}
                     </div>
                   </Popup>
@@ -348,19 +401,18 @@ const DriverDashboard = () => {
               )}
 
               {ride.drop && (
-                <Marker
-                  position={[ride.drop.lat, ride.drop.lng]}
-                >
+                <Marker position={[ride.drop.lat, ride.drop.lng]}>
                   <Popup>
                     <div className="text-sm">
-                      <strong>🎯 Drop</strong><br />
-                      {ride.drop.display || "Unknown"}<br />
-                      <strong>👤 Passenger:</strong> {ride.passengerId?.username || "N/A"}
-                      {ride._id === currentRide && (
-                        <>
-                          <br />
-                          <strong className="text-red-600">🚗 ACTIVE RIDE</strong>
-                        </>
+                      <strong>🎯 Drop</strong>
+                      <br />
+                      {ride.drop.display || "Unknown"}
+                      <br />
+                      <strong>👤 Passenger:</strong>{" "}
+                      {ride.passengerId?.username || "N/A"}
+                      {currentRide?._id === ride._id && <br />}
+                      {currentRide?._id === ride._id && (
+                        <strong className="text-red-600">🚗 ACTIVE RIDE</strong>
                       )}
                     </div>
                   </Popup>
