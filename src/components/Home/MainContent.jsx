@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuth } from "../../../context/authContext";
 
 const MainContent = () => {
   const [city, setCity] = useState("");
   const [buttonText, setButtonText] = useState("Fetching location...");
+
+  const { user } = useAuth();
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -79,17 +82,21 @@ const MainContent = () => {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-          <button className="px-6 py-3 bg-black text-white rounded-2xl w-full sm:w-auto">
-            See prices
-          </button>
+        {!user ? (
           <Link
             to="/login"
-            className="cursor-pointer hover:underline text-gray-700"
+            className="w-full bg-black text-white py-4 rounded-2xl text-center font-semibold hover:bg-gray-800 transition-all"
           >
-            Login to see your activity
+            Sign In to Book a Ride
           </Link>
-        </div>
+        ) : (
+          <Link
+            to="/getride"
+            className="w-full bg-black text-white py-4 rounded-2xl text-center font-semibold hover:bg-gray-800 transition-all"
+          >
+            Book a Ride
+          </Link>
+        )}
       </div>
 
       {/* Right Section */}
