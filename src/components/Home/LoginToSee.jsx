@@ -19,7 +19,7 @@ const LoginToSee = () => {
               Login
             </button>
           </Link>
-          <Link to="/signup" className="text-gray-700 hover:underline">
+          <Link to="/login" className="text-gray-700 hover:underline">
             Create an account
           </Link>
         </div>

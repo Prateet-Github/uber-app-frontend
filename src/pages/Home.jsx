@@ -7,27 +7,32 @@ import Image3 from "../components/Home/Image3";
 import Image4 from "../components/Home/Image4";
 import Image5 from "../components/Home/Image5";
 import Footer from "../components/Home/Footer";
+import { useAuth } from "../../context/authContext";
 
 const Home = () => {
+  const { user } = useAuth();
+
   return (
-    <div className="w-screen min-h-screen flex flex-col relative">
-      <Navbar></Navbar>
+    <div className="w-screen min-h-screen flex flex-col">
+      <Navbar />
 
-      <MainContent></MainContent>
+      <MainContent />
 
-      <Suggestion></Suggestion>
+      <Suggestion />
 
-      <LoginToSee></LoginToSee>
+      {!user && <LoginToSee />}
 
       <Plan></Plan>
 
-      <Image3></Image3>
+      {user?.role !== "driver" && (
+        <>
+          <Image3 />
+          <Image4 />
+          <Image5 />
+        </>
+      )}
 
-      <Image4></Image4>
-
-      <Image5></Image5>
-
-      <Footer></Footer>
+      <Footer />
     </div>
   );
 };

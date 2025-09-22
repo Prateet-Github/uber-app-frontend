@@ -22,7 +22,7 @@ const Image5 = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
-          <Link to="/rental" className="w-full sm:w-auto">
+          <Link to="/login" className="w-full sm:w-auto">
             <button className="px-6 py-3 bg-black text-white rounded-2xl w-full sm:w-auto">
               Get started
             </button>

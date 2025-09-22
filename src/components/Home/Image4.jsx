@@ -19,7 +19,7 @@ const Image4 = () => {
               Get started
             </button>
           </Link>
-          <Link to="/login" className="text-gray-700 hover:underline">
+          <Link to="/solutions" className="text-gray-700 hover:underline">
             Check out for solutions
           </Link>
         </div>
