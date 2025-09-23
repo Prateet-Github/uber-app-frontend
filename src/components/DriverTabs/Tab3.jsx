@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const Tab3 = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [isDown, setIsDown] = useState(false);
@@ -49,6 +49,19 @@ const Tab3 = () => {
 
       if (response.ok) {
         setDriverRequestStatus("pending");
+
+        // Update the user in auth context debuged with claude but i suspected this earlier too
+        // as user object was not updating after driver request
+        // so any component relying on user.driverRequest was not updating
+        // Update the user in auth context
+  const updatedUser = { ...user, driverRequest: "pending" };
+  setUser(updatedUser);
+  
+  // 🔹 Debug: Check if user was actually updated
+  console.log('Before update:', user.driverRequest);
+  console.log('After update:', updatedUser.driverRequest);
+  console.log('Updated user object:', updatedUser);
+
         alert("✅ Driver request submitted successfully!");
         navigate("/pending");
       } else {

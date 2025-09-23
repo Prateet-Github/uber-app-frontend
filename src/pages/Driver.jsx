@@ -9,7 +9,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useAuth } from "./../../context/authContext";
-import Loading from "./Loading"; // your loading component
+import Loading from "./Loading";
 import toast from "react-hot-toast";
 
 export default function UberLandingPage() {
@@ -18,10 +18,10 @@ export default function UberLandingPage() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDown, setIsDown] = useState(false);
-  const [checkingRole, setCheckingRole] = useState(true); // new loading state
-  const [showPage, setShowPage] = useState(true); // Initially show page
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [showPage, setShowPage] = useState(true);
 
-  const [showLoading, setShowLoading] = useState(false); // Show loading later
+  const [showLoading, setShowLoading] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function UberLandingPage() {
     }
   }, []);
 
-  // New effect: redirect if already a driver
+  // redirect if already a driver
   useEffect(() => {
     if (!user) return;
 
@@ -62,8 +62,10 @@ export default function UberLandingPage() {
 
   if (showLoading) return <Loading />;
 
+console.log('When seeing Get Started button, status is:', user?.driverRequest);
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-screen bg-black text-white">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-8">
@@ -164,7 +166,7 @@ export default function UberLandingPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex items-center justify-between px-6 py-16 max-w-7xl mx-auto">
+      <main className="flex items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Left Section */}
         <div className="flex-1 max-w-2xl">
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight mb-8">
@@ -174,15 +176,30 @@ export default function UberLandingPage() {
             Earn on your own schedule.
           </p>
           <div className="flex flex-col sm:flex-row items-start gap-4">
-            <button
-              onClick={() => (window.location.href = "/tab1")}
-              className="bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
-            >
-              Get started
-            </button>
-            <button className="text-white underline underline-offset-4 hover:text-gray-300 transition-colors text-lg">
-              Already have an account? Sign in
-            </button>
+            {!user ? (
+              <button
+                onClick={() => (window.location.href = "/login")}
+                className="text-white underline underline-offset-4 hover:text-gray-300 transition-colors text-lg"
+              >
+                Already have an account? Sign in
+              </button>
+            ) : ["none", "rejected", undefined].includes(
+                user?.driverRequest
+              ) ? (
+              <button
+                onClick={() => (window.location.href = "/tab1")}
+                className="bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
+              >
+                Get started
+              </button>
+            ) : (
+              <button
+                onClick={() => (window.location.href = "/pending")}
+                className="bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
+              >
+                View Request Status
+              </button>
+            )}
           </div>
         </div>
 

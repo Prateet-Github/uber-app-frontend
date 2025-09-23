@@ -15,6 +15,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Add updateUser function to sync localStorage
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
   // Load user from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -100,7 +106,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      setUser: updateUser, // ← Add this
+      signUp, 
+      signIn, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
