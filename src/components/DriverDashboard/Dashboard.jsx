@@ -9,6 +9,8 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 const DriverDashboard = () => {
   const [rides, setRides] = useState([]);
   const [currentRide, setCurrentRide] = useState(() => {
@@ -54,13 +56,13 @@ const DriverDashboard = () => {
       if (!token) return;
       try {
         const { data } = await axios.get(
-          "http://localhost:5001/api/driver-decision/status",
+          `${BACKEND_URL}/driver-decision/status`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (data.success && data.driver?.currentRide) {
           const rideResponse = await axios.get(
-            `http://localhost:5001/api/rides/${data.driver.currentRide}`,
+            `${BACKEND_URL}/rides/${data.driver.currentRide}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           if (rideResponse.data.ride) {
@@ -107,7 +109,7 @@ const DriverDashboard = () => {
     try {
       // Fetch rides from backend
       const response = await axios.get(
-        "http://localhost:5001/api/driver-decision/pending",
+        `${BACKEND_URL}/driver-decision/pending`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -151,7 +153,7 @@ const DriverDashboard = () => {
   const handleAccept = async (rideId) => {
     try {
       const { data } = await axios.patch(
-        `http://localhost:5001/api/rides/${rideId}/accept`,
+        `${BACKEND_URL}/rides/${rideId}/accept`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -168,7 +170,7 @@ const DriverDashboard = () => {
   const handleReject = async (rideId) => {
     try {
       await axios.patch(
-        `http://localhost:5001/api/rides/${rideId}/reject`,
+        `${BACKEND_URL}/${rideId}/reject`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -185,7 +187,7 @@ const DriverDashboard = () => {
     if (!currentRide?._id) return;
     try {
       await axios.patch(
-        `http://localhost:5001/api/driver-decision/clear-ride`,
+        `${BACKEND_URL}/driver-decision/clear-ride`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -211,7 +213,7 @@ const DriverDashboard = () => {
 
           try {
             await axios.patch(
-              `http://localhost:5001/api/driver-decision/location`,
+              `${BACKEND_URL}/driver-decision/location`,
               { lat: latitude, lng: longitude },
               { headers: { Authorization: `Bearer ${token}` } }
             );

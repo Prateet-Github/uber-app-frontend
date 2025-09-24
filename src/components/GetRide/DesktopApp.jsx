@@ -21,6 +21,8 @@ import {
 import Navbar from "./Navbar";
 import axios from "axios";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 // Custom driver icon
 const driverIcon = L.divIcon({
   className: "custom-driver-icon",
@@ -103,7 +105,7 @@ function DesktopApp() {
 
         // Verify the ride still exists and is active using your existing endpoint
         const { data } = await axios.get(
-          `http://localhost:5001/api/rides/${rideData._id}`,
+          `${BACKEND_URL}/rides/${rideData._id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -166,7 +168,7 @@ function DesktopApp() {
   useEffect(() => {
     if (!user._id) return;
 
-    const socket = io("http://localhost:5001");
+    const socket = io(`http://localhost:5001`);
 
     // Listen for ride completion
     socket.on(`ride-completed-${user._id}`, (data) => {
@@ -230,7 +232,7 @@ function DesktopApp() {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5001/api/rides/request",
+        `${BACKEND_URL}/api/rides/request`,
         {
           pickup: { ...pickup, display: pickup.display || "Current Location" },
           drop: { ...drop, display: drop.display || "Destination" },
@@ -265,7 +267,7 @@ function DesktopApp() {
 
     try {
       await axios.patch(
-        `http://localhost:5001/api/rides/${ride._id}/cancel`,
+        `${BACKEND_URL}/rides/${ride._id}/cancel`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
