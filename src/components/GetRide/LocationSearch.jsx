@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import { geocodeLocation, reverseGeocode } from "../../../helper/Nominatim";
+import debounce from "lodash.debounce";
+import { useCallback } from "react";
 
 //  Autocomplete search box
 export function LocationSearch({
@@ -19,23 +21,33 @@ export function LocationSearch({
     setQuery(value || "");
   }, [value]);
 
-  const handleSearch = async (value) => {
-    setQuery(value);
-    if (value.length > 2) {
-      setIsLoading(true);
-      try {
-        const data = await geocodeLocation(value); // call backend POST
-        setResults(data);
-      } catch (error) {
-        console.error("Search error:", error);
+  // Inside LocationSearch component
+  const debouncedSearch = useCallback(
+    debounce(async (value) => {
+       console.log("⏱ Debounced search triggered:", value);
+      if (value.length > 2) {
+        setIsLoading(true);
+        try {
+          const data = await geocodeLocation(value); // Uses caching
+          setResults(data);
+        } catch (err) {
+          console.error("Search error:", err);
+          setResults([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
         setResults([]);
-      } finally {
-        setIsLoading(false);
       }
-    } else {
-      setResults([]);
-    }
-  };
+    }, 500),
+    [] // empty dependency → same instance
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   const handleCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -85,7 +97,10 @@ export function LocationSearch({
           type="text"
           placeholder={placeholder}
           value={query}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            debouncedSearch(e.target.value);
+          }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           className="flex-1 outline-none text-gray-900 placeholder-gray-500 font-medium"
