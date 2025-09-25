@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { geocodeLocation, reverseGeocode } from "../../../helper/Nominatim";
 
 //  Autocomplete search box
 export function LocationSearch({
@@ -23,10 +24,7 @@ export function LocationSearch({
     if (value.length > 2) {
       setIsLoading(true);
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${value}&limit=5&addressdetails=1`
-        );
-        const data = await res.json();
+        const data = await geocodeLocation(value); // call backend POST
         setResults(data);
       } catch (error) {
         console.error("Search error:", error);
@@ -43,16 +41,25 @@ export function LocationSearch({
     if (navigator.geolocation) {
       setIsLoading(true);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const coords = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-            display: "Current Location",
           };
-          onSelect(coords);
-          setQuery("Current Location");
-          setResults([]);
-          setIsLoading(false);
+
+          try {
+            const data = await reverseGeocode(coords.lat, coords.lng); // backend POST
+            const displayName = data?.display_name || "Current Location";
+            onSelect({ ...coords, display: displayName });
+            setQuery(displayName);
+          } catch (error) {
+            console.error("Reverse geocode error:", error);
+            onSelect({ ...coords, display: "Current Location" });
+            setQuery("Current Location");
+          } finally {
+            setResults([]);
+            setIsLoading(false);
+          }
         },
         (error) => {
           console.error("Geolocation error:", error);

@@ -8,6 +8,7 @@ import {
   Popup,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { reverseGeocode } from "../../../helper/Nominatim";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -25,17 +26,18 @@ const DriverDashboard = () => {
 
   const token = localStorage.getItem("token");
 
-  const getLocationName = async (lat, lng) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=en`
-      );
-      const data = await res.json();
-      return data.display_name || "Unknown Location";
-    } catch (err) {
-      return "Unknown Location";
+const getLocationName = async (lat, lng) => {
+  try {
+    const res = await reverseGeocode(lat, lng, token);
+    if (res?.display_name) {
+      return res.display_name;
     }
-  };
+    return "Unknown Location";
+  } catch (err) {
+    console.error("Reverse geocode error:", err);
+    return "Unknown Location";
+  }
+};
 
   // Helpers
   const updateCurrentRide = (ride) => {
@@ -170,7 +172,7 @@ const DriverDashboard = () => {
   const handleReject = async (rideId) => {
     try {
       await axios.patch(
-        `${BACKEND_URL}/${rideId}/reject`,
+        `${BACKEND_URL}/rides/${rideId}/reject`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

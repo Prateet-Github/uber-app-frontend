@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const VITE_NOMINATIM_URL = process.env.VITE_NOMINATIM_URL;
+const VITE_NOMINATIM_URL = import.meta.env.VITE_NOMINATIM_URL;
 
 export const geocodeLocation = async (query, token) => {
   try {

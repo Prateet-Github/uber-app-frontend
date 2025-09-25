@@ -232,7 +232,7 @@ function DesktopApp() {
 
     try {
       const { data } = await axios.post(
-        `${BACKEND_URL}/api/rides/request`,
+        `${BACKEND_URL}/rides/request`,
         {
           pickup: { ...pickup, display: pickup.display || "Current Location" },
           drop: { ...drop, display: drop.display || "Destination" },
